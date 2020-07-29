@@ -14,11 +14,40 @@
 #include <ctime>
 #include <random>
 #include <chrono>
+#include <utility>
 
 using std::valarray;
 using std::vector;
+using std::pair; using std::make_pair;
 
 typedef valarray<double> ValD;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// ACTIVATION base
+class Activation {
+public:
+	virtual ValD activate (const ValD &z) = 0;
+	virtual ValD prime    (const ValD &z) = 0;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// LINEAR derived
+class Linear: public Activation {
+public:
+	ValD activate (const ValD &z) { return z; }
+	ValD prime    (const ValD &z) { return ValD(1.0, z.size()); }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Sigmoid derived
+class Sigmoid: public Activation {
+public:
+	ValD activate (const ValD &z) { return 1.0 / (1.0 + exp(-z)); }
+	ValD prime    (const ValD &z) { return activate(z) * (1.0 - activate(z)); }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 //

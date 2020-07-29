@@ -32,7 +32,7 @@ size_t total_epochs = 0;
 class Network {
 public:
 	// constructor
-	Network(vector<size_t> layerSizes, double stepConst, double lambda);
+	Network(vector<pair<size_t, Activation*>> layerSizes, double stepConst, double lambda);
 
 	// methods
 	void   train(const valarray<ValD>& Xdata, const ValD& Ydata, const size_t epochs,       // trains the whole network
@@ -51,11 +51,12 @@ private:
 	void backPropagation    (const ValD& alpha, const ValD& Yvalue); // uses backprop to adjust weights and biases
 	ValD forwardPropagation (const ValD& inputs);                    // returns a valarray of output layer activations
 
-	vector<Layer> layers_;
-	vector<ValD>  z_; // need to store z values after each forward prop to be used in back prop alg
-	double        stepConstant_;
-	double        lambda_;
-	size_t        trainingSetSize_;
+	vector<Activation *> activations_;
+	vector<Layer>        layers_;
+	vector<ValD>         z_; // need to store z values after each forward prop to be used in back prop alg
+	double               stepConstant_;
+	double               lambda_;
+	size_t               trainingSetSize_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,17 +64,22 @@ private:
 // NETWORK functions
 ////////////////////////////////////////
 // constructor
-Network::Network(vector<size_t> layerSizes, double stepConst, double lambda) :
+Network::Network(vector<pair<size_t, Activation *>> layerSizes, double stepConst, double lambda) :
+	activations_(vector<Activation *>(layerSizes.size())),
 	layers_(vector<Layer>(layerSizes.size())),
 	z_(vector<ValD>(layerSizes.size())),
 	stepConstant_(stepConst),
 	lambda_(lambda),
 	trainingSetSize_(0)
 {
-	// init layers, start from 1 since 0 is the input layer which doesn't have weights or biases
-	layers_[0].size_ = layerSizes[0];
+	// init activations vector, first activation is null since it is never used
 	for (size_t i = 1; i != layers_.size(); ++i)
-		layers_[i] = Layer(layerSizes[i - 1], layerSizes[i]);
+		activations_[i] = layerSizes[i].second;
+
+	// init layers, start from 1 since 0 is the input layer which doesn't have weights or biases
+	layers_[0].size_ = layerSizes[0].first;
+	for (size_t i = 1; i != layers_.size(); ++i)
+		layers_[i] = Layer(layerSizes[i - 1].first, layerSizes[i].first);
 }
 
 ////////////////////////////////////////
@@ -98,7 +104,7 @@ ValD Network::forwardPropagation(const ValD & inputs)
 		z_[l] = z;
 
 		// get activations
-		alpha = sigmoid(z);
+		alpha = activations_[l]->activate(z);
 	}
 
 	return alpha;
@@ -120,7 +126,7 @@ void Network::backPropagation(const ValD & alpha, const ValD & Yvalue)
 	{
 		ValD deltaSum(0.0, layers_[l].size_);
 		for (size_t k = 0; k != layers_[l + 1].size_; ++k)
-			deltaSum += layers_[l + 1].weights_[k] * delta[l + 1][k] * sigmoidPrime(z_[l]);
+			deltaSum += layers_[l + 1].weights_[k] * delta[l + 1][k] * activations_[l]->prime(z_[l]);
 
 		delta[l] = deltaSum;
 	}
@@ -313,6 +319,7 @@ void Network::load(string name)
 
 	// now set layers
 	layers_ = vector<Layer>(layerSizes.size());
+	layers_[0].size_ = layerSizes[0];
 	for (size_t i = 1; i != layers_.size(); ++i)
 		layers_[i] = Layer(layerSizes[i - 1], layerSizes[i]);
 

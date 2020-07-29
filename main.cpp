@@ -32,10 +32,12 @@ int main()
 	const bool TRAIN_WITH_TESTING = false;
 
 	// set up network
-	Network net(
-		vector<size_t>({ INPUT_OUTPUT_SIZE, 8, INPUT_OUTPUT_SIZE }), 
-		STEP_SIZE,
-		STARTING_LAMBDA
+	Network net(vector<pair<size_t, Activation *>>({
+					make_pair(INPUT_OUTPUT_SIZE, new Linear),  // first layer activation function is never used
+				    make_pair(8, new Sigmoid),
+				    make_pair(INPUT_OUTPUT_SIZE, new Sigmoid) }),
+				STEP_SIZE,
+				STARTING_LAMBDA
 	);
 
 	// setup training data
