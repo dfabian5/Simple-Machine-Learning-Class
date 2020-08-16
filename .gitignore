@@ -5,3 +5,5 @@
 /.vs/slnx.sqlite
 /.vs
 *.txt
+/main.obj
+/main.exe

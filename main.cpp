@@ -34,8 +34,8 @@ int main()
 	// set up network
 	Network net(vector<pair<size_t, Activation *>>({
 					make_pair(INPUT_OUTPUT_SIZE, new Linear),  // first layer activation function is never used
-				    make_pair(8, new Sigmoid),
-				    make_pair(INPUT_OUTPUT_SIZE, new Sigmoid) }),
+				    make_pair(8, new Linear),
+				    make_pair(INPUT_OUTPUT_SIZE, new Softmax) }),
 				STEP_SIZE,
 				STARTING_LAMBDA
 	);

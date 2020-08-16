@@ -27,8 +27,8 @@ typedef valarray<double> ValD;
 // ACTIVATION base
 class Activation {
 public:
-	virtual ValD activate (const ValD &z) = 0;
-	virtual ValD prime    (const ValD &z) = 0;
+	virtual ValD activate(const ValD &z) = 0;
+	virtual ValD prime(const ValD &z) = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,17 +36,39 @@ public:
 // LINEAR derived
 class Linear: public Activation {
 public:
-	ValD activate (const ValD &z) { return z; }
-	ValD prime    (const ValD &z) { return ValD(1.0, z.size()); }
+	ValD activate(const ValD &z) { return z; }
+	ValD prime(const ValD &z) { return ValD(1.0, z.size()); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Sigmoid derived
+// SIGMOID derived
 class Sigmoid: public Activation {
 public:
-	ValD activate (const ValD &z) { return 1.0 / (1.0 + exp(-z)); }
-	ValD prime    (const ValD &z) { return activate(z) * (1.0 - activate(z)); }
+	ValD activate(const ValD &z) { return 1.0 / (1.0 + exp(-z)); }
+	ValD prime(const ValD &z) { return activate(z) * (1.0 - activate(z)); }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// RELU derived
+class Relu: public Activation {
+public:
+	ValD activate(const ValD &z) { return z.apply([](const double &x) { return x <= 0 ? 0.0 : x; }); }
+	ValD prime(const ValD &z) { return z.apply([](const double &x) { return x <= 0 ? 0.0 : 1.0; }); }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// SOFTMAX derived
+class Softmax: public Activation {
+public:
+	ValD activate(const ValD &z) { return z.apply(exp) / z.apply(exp).sum(); }
+	ValD prime(const ValD &z) {
+		ValD x = z.apply(exp);
+		double y = z.apply(exp).sum();
+		return (x * y - x * x) / (y * y);
+	}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +104,7 @@ struct Layer {
 	}
 
 	// overloaded assignment
-	Layer& operator=(const Layer& rhs)
+	Layer &operator=(const Layer &rhs)
 	{
 		size_ = rhs.size_;
 		weights_ = rhs.weights_;
@@ -90,27 +112,10 @@ struct Layer {
 
 		return *this;
 	}
-	
+
 	valarray<ValD> weights_;
 	ValD           biases_;
 	size_t         size_;
 };
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// HELPER FUNCTIONS
-////////////////////////////////////////
-// sigmoid function
-ValD sigmoid(const ValD& z)
-{
-	return 1.0 / (1.0 + exp(-z));
-}
-
-////////////////////////////////////////
-// sigmoid prime function
-ValD sigmoidPrime(const ValD& z)
-{
-	return sigmoid(z) * (1.0 - sigmoid(z));
-}
 
 #endif // NETWORK_UTILITY_H

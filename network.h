@@ -72,7 +72,8 @@ Network::Network(vector<pair<size_t, Activation *>> layerSizes, double stepConst
 	lambda_(lambda),
 	trainingSetSize_(0)
 {
-	// init activations vector, first activation is null since it is never used
+	// init activations vector, first activation is Linear since it is never used
+	activations_[0] = new Linear;
 	for (size_t i = 1; i != layers_.size(); ++i)
 		activations_[i] = layerSizes[i].second;
 
@@ -135,7 +136,7 @@ void Network::backPropagation(const ValD & alpha, const ValD & Yvalue)
 	for (size_t l = 1; l != layers_.size(); ++l)
 	{
 		layers_[l].biases_ += stepConstant_ * delta[l];
-		ValD activation = sigmoid(z_[l - 1]);
+		ValD activation = activations_[l - 1]->activate(z_[l - 1]);
 
 		for (size_t j = 0; j != layers_[l].size_; ++j)
 		{
